@@ -5,10 +5,11 @@ Modular Internal Load Balancer for GCE using forwarding rules.
 ## Usage
 
 ```ruby
-module "gce-ilb" {
-  source         = "GoogleCloudPlatform/lb-internal/google"
+module "gce-int-lb" {
+  source         = "pouya-racker/lb-internal/pouya"
   region         = "${var.region}"
-  name           = "group2-ilb"
+  name           = "int-lb"
+  shared_vpc_project = "${var.shared_vpc_project}"
   ports          = ["${module.mig2.service_port}"]
   health_port    = "${module.mig2.service_port}"
   source_tags    = ["${module.mig1.target_tags}"]
