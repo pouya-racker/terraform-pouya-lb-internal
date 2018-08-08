@@ -1,34 +1,18 @@
-/*
- * Copyright 2017 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 # The forwarding rule resource needs the self_link but the firewall rules only need the name.
 # Using a data source here to access both self_link and name by looking up the network name.
 data "google_compute_network" "network" {
   name    = "${var.network}"
-  project = "${var.network_project == "" ? var.project : var.network_project}"
+  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
 }
 
 data "google_compute_subnetwork" "network" {
   name    = "${var.subnetwork}"
-  project = "${var.network_project == "" ? var.project : var.network_project}"
+  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
 }
 
 resource "google_compute_forwarding_rule" "default" {
   project               = "${var.project}"
-  name                  = "${var.name}"
+  name                  = "${var.name}-fr"
   region                = "${var.region}"
   network               = "${data.google_compute_network.network.self_link}"
   subnetwork            = "${data.google_compute_subnetwork.network.self_link}"
@@ -41,7 +25,7 @@ resource "google_compute_forwarding_rule" "default" {
 
 resource "google_compute_region_backend_service" "default" {
   project          = "${var.project}"
-  name             = "${var.name}"
+  name             = "${var.name}-be"
   region           = "${var.region}"
   protocol         = "${var.ip_protocol}"
   timeout_sec      = 10
@@ -70,9 +54,9 @@ resource "google_compute_health_check" "http" {
   }
 }
 
-resource "google_compute_firewall" "default-ilb-fw" {
-  project = "${var.network_project == "" ? var.project : var.network_project}"
-  name    = "${var.name}-ilb-fw"
+resource "google_compute_firewall" "default-int-lb-fw" {
+  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
+  name    = "${var.name}-int-lb-fw"
   network = "${data.google_compute_network.network.name}"
 
   allow {
@@ -84,9 +68,9 @@ resource "google_compute_firewall" "default-ilb-fw" {
   target_tags = ["${var.target_tags}"]
 }
 
-resource "google_compute_firewall" "default-hc" {
-  project = "${var.network_project == "" ? var.project : var.network_project}"
-  name    = "${var.name}-hc"
+resource "google_compute_firewall" "default-int-lb-hc-fw" {
+  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
+  name    = "${var.name}-int-lb-hc-fw"
   network = "${data.google_compute_network.network.name}"
 
   allow {
