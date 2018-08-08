@@ -2,17 +2,17 @@
 # Using a data source here to access both self_link and name by looking up the network name.
 data "google_compute_network" "network" {
   name    = "${var.network}"
-  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
+  project = "${var.shared_vpc_enabled ? var.shared_vpc_project : var.project}"
 }
 
 data "google_compute_subnetwork" "network" {
   name    = "${var.subnetwork}"
-  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
+  project = "${var.shared_vpc_enabled ? var.shared_vpc_project : var.project}"
 }
 
 resource "google_compute_forwarding_rule" "default" {
   project               = "${var.project}"
-  name                  = "${var.name}-fr"
+  name                  = "${var.lb_name}-fr"
   region                = "${var.region}"
   network               = "${data.google_compute_network.network.self_link}"
   subnetwork            = "${data.google_compute_subnetwork.network.self_link}"
@@ -25,7 +25,7 @@ resource "google_compute_forwarding_rule" "default" {
 
 resource "google_compute_region_backend_service" "default" {
   project          = "${var.project}"
-  name             = "${var.name}-be"
+  name             = "${var.lb_name}-be"
   region           = "${var.region}"
   protocol         = "${var.ip_protocol}"
   timeout_sec      = 10
@@ -37,7 +37,7 @@ resource "google_compute_region_backend_service" "default" {
 resource "google_compute_health_check" "tcp" {
   count = "${var.http_health_check ? 0 : 1}"
   project = "${var.project}"
-  name    = "${var.name}-hc"
+  name    = "${var.lb_name}-hc-tcp"
 
   tcp_health_check {
     port = "${var.health_port}"
@@ -47,16 +47,16 @@ resource "google_compute_health_check" "tcp" {
 resource "google_compute_health_check" "http" {
   count = "${var.http_health_check ? 1 : 0}"
   project = "${var.project}"
-  name    = "${var.name}-hc"
+  name    = "${var.lb_name}-hc-http"
 
   http_health_check {
     port = "${var.health_port}"
   }
 }
 
-resource "google_compute_firewall" "default-int-lb-fw" {
-  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
-  name    = "${var.name}-int-lb-fw"
+resource "google_compute_firewall" "default-fw" {
+  project = "${var.shared_vpc_enabled ? var.shared_vpc_project : var.project}"
+  name    = "${var.lb_name}-fw"
   network = "${data.google_compute_network.network.name}"
 
   allow {
@@ -68,9 +68,9 @@ resource "google_compute_firewall" "default-int-lb-fw" {
   target_tags = ["${var.target_tags}"]
 }
 
-resource "google_compute_firewall" "default-int-lb-hc-fw" {
-  project = "${var.shared_vpc_project == "" ? var.project : var.shared_vpc_project}"
-  name    = "${var.name}-int-lb-hc-fw"
+resource "google_compute_firewall" "default-hc-fw" {
+  project = "${var.shared_vpc_enabled ? var.shared_vpc_project : var.project}"
+  name    = "${var.lb_name}-gcp-hc-fw"
   network = "${data.google_compute_network.network.name}"
 
   allow {

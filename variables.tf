@@ -3,27 +3,33 @@ variable project {
   default     = ""
 }
 
-variable region {
-  description = "Region for cloud resources."
-  default     = "us-central1"
-}
-
-variable network {
-  description = "Name of the network to create resources in."
-  default     = "default"
-}
-
-variable subnetwork {
-  description = "Name of the subnetwork to create resources in."
-  default     = "default"
+variable shared_vpc_enabled {
+  description = "Set to true if resource is being built in a shared-vpc"
+  default     = true
 }
 
 variable shared_vpc_project {
-  description = "Name of the project for the network. Useful for shared VPC. Default is var.project."
+  description = "Shared vpc project name."
   default     = ""
 }
 
-variable name {
+variable region {
+  description = "Region for cloud resources."
+  default     = ""
+}
+
+variable network {
+  description = "Name of the network to create resources in, should be shared vpc network name if you use shared vpc"
+  default     = ""
+}
+
+variable subnetwork {
+  description = "Name of the subnetwork to create resources in, should be shared vpc subnetwork name if you use shared vpc"
+  default     = ""
+}
+
+
+variable lb_name {
   description = "Name for the forwarding rule and prefix for supporting resources."
 }
 
@@ -52,12 +58,12 @@ variable health_port {
 }
 
 variable source_tags {
-  description = "List of source tags for traffic between the internal load balancer."
+  description = "List of source tags for ingress traffic to internal load balancer."
   type        = "list"
 }
 
 variable target_tags {
-  description = "List of target tags for traffic between the internal load balancer."
+  description = "List of target tags for egress traffic from internal load balancer."
   type        = "list"
 }
 
